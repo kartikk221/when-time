@@ -16,6 +16,7 @@ This package aims to simplify the task of scheduling tasks at specified time wit
 
 ## Features
 - Simple-to-use API
+- Timezones Support
 - Human Readable Parameters
 - Chainable Syntax
 - Memory Efficient
@@ -102,6 +103,8 @@ Below is a breakdown of the `TimeTask` class generated when calling `whenTime.is
 * `do(Function: operation)`: Adds an operation to the list of scheduled operations for a `TimeTask`.
     * **Returns** `TimeTask` therefore a chainable method.
     * **Note** operations will be executed in the order they were scheduled using this method on a `TimeTask` instance.
+* `inTimezone(String: timezone)`: Specifies the timezone for the `time_string` specified at creation of task.
+  * **See** [Timezones](./src/timezones.json) for supported timzones.
 * `repeat(Number: amount)`: Sets the amount of times the scheduled tasks should repeat.
     * **Default**: `Infinity`
     * **Returns** `TimeTask` therefore a chainable method.
