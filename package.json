@@ -1,6 +1,6 @@
 {
   "name": "when-time",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Simple Package To Do Things On Time In Node.js",
   "main": "index.js",
   "scripts": {
