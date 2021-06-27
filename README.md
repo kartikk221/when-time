@@ -96,6 +96,7 @@ Below is a breakdown of the `TimeTask` class generated when calling `whenTime.is
 | Property  | Type     | Description                |
 | :-------- | :------- | :------------------------- |
 | `state` | `String` | Possible States: `INITIALIZED`, `PENDING`, `STARTED`, `FINISHED`, `CANCELLED` |
+| `next_execution` | `Number` | Timestamp of next execution in milliseconds |
 | `tasks` | `Array` | Returns all scheduled tasks with `do(handler)` |
 | `remaining` | `Number` | Number of repetitions remaining for task is finished |
 
