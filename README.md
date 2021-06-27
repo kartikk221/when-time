@@ -1,5 +1,16 @@
 # whenTime: A Simple Package To Do Things On Time In Node.js
 
+<div align="left">
+
+[![NPM version](https://img.shields.io/npm/v/when-time.svg?style=flat)](https://www.npmjs.com/package/when-time)
+[![NPM downloads](https://img.shields.io/npm/dm/when-time.svg?style=flat)](https://www.npmjs.com/package/when-time)
+[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/kartikk221/when-time.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/kartikk221/when-time/context:javascript)
+[![GitHub issues](https://img.shields.io/github/issues/kartikk221/when-time)](https://github.com/kartikk221/when-time/issues)
+[![GitHub stars](https://img.shields.io/github/stars/kartikk221/when-time)](https://github.com/kartikk221/when-time/stargazers)
+[![GitHub license](https://img.shields.io/github/license/kartikk221/when-time)](https://github.com/kartikk221/when-time/blob/master/LICENSE)
+
+</div>
+
 ## Motivation
 This package aims to simplify the task of scheduling tasks at specified time with a simple-to-use API. This can be helpful for making your applications restart at specific times in the day or having specific operations occur at a time period with repetitions.
 
