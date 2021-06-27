@@ -1,3 +1,4 @@
+const timezones = require('./timezones.json');
 const conversion = {
     day: 1000 * 60 * 60 * 24,
     hour: 1000 * 60 * 60,
@@ -10,16 +11,34 @@ const conversionKeys = Object.keys(conversion);
 
 class TimeTask {
     #time_point;
+    #timezone;
     #timeout;
     #interval;
     #tasks = [];
     #repeat_interval = conversion.day; // Default is 24 hours
     #repeat_count = 0;
     #state = 'INITIALIZED'; // [INITIALIZED, PENDING, STARTED, FINISHED, CANCELLED]
+    #next_execution;
     #finish_handler;
 
     constructor(time_string) {
-        this.#time_point = this._parse_time_string(time_string);
+        this.#time_point = this.#parse_time_string(time_string);
+    }
+
+    /**
+     * Sets the timezone for current TimeTask instance to target for scheduling purposes.
+     *
+     * @param {String} timezone
+     */
+    inTimezone(timezone) {
+        // Ensure timezone is a string type
+        if (typeof timezone !== 'string')
+            throw new Error(
+                '.inTimezone(timezone) -> timezone must be a String type.'
+            );
+
+        this.#timezone = timezone;
+        return this;
     }
 
     /**
@@ -40,7 +59,7 @@ class TimeTask {
 
         // Queue the task for future execution
         this.#tasks.push(task);
-        this._schedule();
+        this.#schedule();
         return this;
     }
 
@@ -66,7 +85,7 @@ class TimeTask {
      * @param {String} interval_string
      */
     every(interval_string) {
-        let milliseconds = this._parse_interval_string(interval_string);
+        let milliseconds = this.#parse_interval_string(interval_string);
         this.#repeat_interval = milliseconds;
         return this;
     }
@@ -99,7 +118,7 @@ class TimeTask {
      * Instance can successfully be cleaned up after being CANCELLED.
      */
     cancel() {
-        this._finish('CANCELLED');
+        this.#finish('CANCELLED');
     }
 
     /**
@@ -109,7 +128,7 @@ class TimeTask {
      * @param {Number} limit
      * @returns {Number} Number
      */
-    _wrap_number(input, limit) {
+    #wrap_number(input, limit) {
         return input > limit
             ? input % limit
             : input < 0
@@ -123,7 +142,7 @@ class TimeTask {
      * @param {String} time_string
      * @returns {Object} Object
      */
-    _parse_time_string(time_string) {
+    #parse_time_string(time_string) {
         // Ensure time_string is a string
         if (typeof time_string !== 'string')
             throw new Error('time_string must be a string type');
@@ -141,7 +160,7 @@ class TimeTask {
             let hours = +chunks[0];
             if (chunks.length > 0 && !isNaN(hours)) {
                 // Wrap hours to a maximum of 24 hours
-                hours = this._wrap_number(hours, 24);
+                hours = this.#wrap_number(hours, 24);
 
                 // Relativize 12 hour format into a 24 hour format
                 if (hours < 12 && isPM) hours += 12;
@@ -149,9 +168,9 @@ class TimeTask {
                 // Return wrapped breakdown of the time point in 24 hour format
                 return {
                     hours: hours,
-                    minutes: this._wrap_number(+(chunks[1] || 0), 60),
-                    seconds: this._wrap_number(+(chunks[2] || 0), 60),
-                    milliseconds: this._wrap_number(+(chunks[3] || 0), 1000),
+                    minutes: this.#wrap_number(+(chunks[1] || 0), 60),
+                    seconds: this.#wrap_number(+(chunks[2] || 0), 60),
+                    milliseconds: this.#wrap_number(+(chunks[3] || 0), 1000),
                 };
             }
         }
@@ -168,7 +187,7 @@ class TimeTask {
      * @param {String} interval_string
      * @returns {Number} Milliseconds
      */
-    _parse_interval_string(interval_string) {
+    #parse_interval_string(interval_string) {
         let chunks = interval_string.split(' ');
         if (chunks.length == 2) {
             let amount = +chunks[0];
@@ -191,11 +210,38 @@ class TimeTask {
     }
 
     /**
+     * Returns current time point in specified timezone string.
+     *
+     * @param {String} tz Timezone String
+     * @returns {Object} Object
+     */
+    #current_time_tz(tz) {
+        // Generate local and nativized date
+        let date = new Date();
+        let native = date.toLocaleTimeString('en-US', {
+            timeZone: tz,
+        });
+
+        // Determine nativized hours and convert to 24 hour format
+        let hours = +native.split(':')[0];
+        let isPM = native.endsWith('PM');
+        return {
+            hours: hours + (isPM ? 12 : 0),
+            minutes: date.getMinutes(),
+            seconds: date.getSeconds(),
+            milliseconds: date.getMilliseconds(),
+        };
+    }
+
+    /**
      * Returns current time point.
      *
      * @returns {Object} Object
      */
-    _current_time() {
+    #current_time() {
+        // Use timzone specific method if a timezone is specified
+        if (this.#timezone) return this.#current_time_tz(this.#timezone);
+
         let date = new Date();
         return {
             hours: date.getHours(),
@@ -206,37 +252,12 @@ class TimeTask {
     }
 
     /**
-     * Returns difference between two time points.
-     *
-     * @param {Object} p1
-     * @param {Object} p2
-     * @returns {Object} Time Point
-     */
-    _point_difference(p1, p2) {
-        let difference = {
-            hours: this._wrap_number(p2.hours - p1.hours, 24),
-            minutes: p2.minutes - p1.minutes,
-            seconds: p2.seconds - p1.seconds,
-            milliseconds: p2.milliseconds - p1.milliseconds,
-        };
-
-        // Determine difference in milliseconds
-        let difference_msecs = this._point_to_milliseconds(difference);
-
-        // Wrap around difference by 24 hours if current window is missed
-        if (difference.hours == 0 && difference_msecs < 0)
-            difference.hours += 24;
-
-        return difference;
-    }
-
-    /**
      * Converts time point into milliseconds.
      *
      * @param {Object} point
      * @returns {Number}
      */
-    _point_to_milliseconds(point) {
+    #point_to_milliseconds(point) {
         return (
             point.hours * conversion.hour +
             point.minutes * conversion.minute +
@@ -246,42 +267,15 @@ class TimeTask {
     }
 
     /**
-     * Converts milliseconds to time point.
-     *
-     * @param {Number} milliseconds
-     * @returns {Object} Object
-     */
-    _milliseconds_to_point(milliseconds) {
-        // Calculate Hours
-        let hours = Math.floor(milliseconds / conversion.hour);
-        if (hours > 0) milliseconds -= hours * conversion.hour;
-
-        // Calculate Minutes
-        let minutes = Math.floor(milliseconds / conversion.minute);
-        if (minutes > 0) milliseconds -= minutes * conversion.minute;
-
-        // Calculate Seconds
-        let seconds = Math.floor(milliseconds / conversion.second);
-        if (seconds > 0) milliseconds -= seconds * conversion.second;
-
-        return {
-            hours: hours,
-            minutes: minutes,
-            seconds: seconds,
-            milliseconds: milliseconds,
-        };
-    }
-
-    /**
      * Returns the offset in milliseconds till next execution time.
      *
      * @returns {Number}
      */
-    _execution_offset() {
-        let current = this._current_time();
+    #execution_offset() {
+        let current = this.#current_time();
         let future = this.#time_point;
-        let current_msecs = this._point_to_milliseconds(current);
-        let future_msecs = this._point_to_milliseconds(future);
+        let current_msecs = this.#point_to_milliseconds(current);
+        let future_msecs = this.#point_to_milliseconds(future);
 
         // Return milliseconds till next time hit
         if (current_msecs < future_msecs) {
@@ -294,16 +288,17 @@ class TimeTask {
     /**
      * Schedules the first task execution based on offset to next time point
      */
-    _schedule() {
+    #schedule() {
         // Do not reschedule once TimeTask is in pending state
         if (this.#state == 'PENDING') return;
 
         // Create a timeout with determined offset to perform first execution
-        let offset = this._execution_offset();
+        let offset = this.#execution_offset();
         this.#state = 'PENDING';
+        this.#next_execution = Date.now() + offset;
         this.#timeout = setTimeout(
             (reference) => {
-                reference._execute(true);
+                reference.#execute(true);
                 reference.#timeout = undefined;
             },
             offset,
@@ -314,19 +309,24 @@ class TimeTask {
     /**
      * Repeats time task execution and offsets pending repetitions.
      */
-    _repeat() {
+    #repeat() {
         // Execute all tasks
-        this._execute();
+        this.#execute();
 
         // Calculate if more repetitions are pending and finish if no more pending repetitions remain
         this.#repeat_count--;
-        if (this.#repeat_count < 1 && this.#state == 'STARTED') this._finish();
+        if (this.#repeat_count < 1 && this.#state == 'STARTED') {
+            this.#finish();
+        } else {
+            // Update next execution timestamp
+            this.#next_execution = Date.now() + this.#repeat_interval;
+        }
     }
 
     /**
      * Performs Time Task execution and repeats if neccessary
      */
-    _execute(first_time = false) {
+    #execute(first_time = false) {
         // Handle first time execution for future setup
         if (first_time) {
             // Update the task state to started upon first execution
@@ -335,8 +335,9 @@ class TimeTask {
             // Bind interval to repeat task if repetitions are specified
             if (this.#repeat_count > 1) {
                 this.#repeat_count--;
+                this.#next_execution = Date.now() + this.#repeat_interval;
                 this.#interval = setInterval(
-                    (ref) => ref._repeat(),
+                    (task) => task.#repeat(),
                     this.#repeat_interval,
                     this
                 );
@@ -347,7 +348,7 @@ class TimeTask {
         this.#tasks.forEach((task) => task());
 
         // Finish after first execution if no repetitions are pending
-        if (this.#repeat_count < 1) this._finish();
+        if (this.#repeat_count < 1) this.#finish();
     }
 
     /**
@@ -355,7 +356,7 @@ class TimeTask {
      *
      * @param {String} state
      */
-    _finish(state = 'FINISHED') {
+    #finish(state = 'FINISHED') {
         if (this.#timeout) clearTimeout(this.#timeout);
         if (this.#interval) clearInterval(this.#interval);
         this.#tasks = [];
@@ -367,6 +368,10 @@ class TimeTask {
     }
 
     /* TimeTask Getters */
+    get next_execution() {
+        return this.#next_execution;
+    }
+
     get tasks() {
         return this.#tasks;
     }
