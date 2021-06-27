@@ -1,7 +1,7 @@
 {
   "name": "when-time",
   "version": "1.0.0",
-  "description": "A simple package to do timed things with time in Node.js",
+  "description": "A Simple Package To Do Things On Time In Node.js",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -18,12 +18,14 @@
     "do",
     "things",
     "asynchronous",
-    "memory-efficient"
+    "memory-efficient",
+    "chainable"
   ],
   "author": "kartikk221",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/kartikk221/when-time/issues"
   },
-  "homepage": "https://github.com/kartikk221/when-time#readme"
+  "homepage": "https://github.com/kartikk221/when-time#readme",
+  "dependencies": {}
 }
