@@ -71,6 +71,12 @@ class TimeTask {
         return this;
     }
 
+    /**
+     * Binds a handler which is called once the current TimeTask is fully complete and all scheduled repetitions have been completed.
+     *
+     * @param {Function} handler
+     * @returns
+     */
     whenFinished(handler) {
         // Only allow function type handler
         if (typeof handler !== 'function')
