@@ -4,7 +4,6 @@
 
 [![NPM version](https://img.shields.io/npm/v/when-time.svg?style=flat)](https://www.npmjs.com/package/when-time)
 [![NPM downloads](https://img.shields.io/npm/dm/when-time.svg?style=flat)](https://www.npmjs.com/package/when-time)
-[![Language grade: JavaScript](https://img.shields.io/lgtm/grade/javascript/g/kartikk221/when-time.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/kartikk221/when-time/context:javascript)
 [![GitHub issues](https://img.shields.io/github/issues/kartikk221/when-time)](https://github.com/kartikk221/when-time/issues)
 [![GitHub stars](https://img.shields.io/github/stars/kartikk221/when-time)](https://github.com/kartikk221/when-time/stargazers)
 [![GitHub license](https://img.shields.io/github/license/kartikk221/when-time)](https://github.com/kartikk221/when-time/blob/master/LICENSE)
